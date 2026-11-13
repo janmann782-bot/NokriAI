@@ -29,7 +29,8 @@ def initialize(db):
 def main():
     os.umask(0o077)
     parser=argparse.ArgumentParser()
-    parser.add_argument('command',choices=['run','init','import','load','backup','doctor'])
+    parser.add_argument('command',nargs='?',default='run',choices=['run','init','import','load','backup','doctor'],
+                        help='Команда (по умолчанию: run для BotHost и других хостингов)')
     parser.add_argument('path',nargs='?')
     args=parser.parse_args()
     db=DB(os.getenv('DATABASE_PATH','state/nokri.sqlite'))
