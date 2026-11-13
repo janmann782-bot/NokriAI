@@ -8,7 +8,7 @@ UNKNOWN_CELESTIAL = 'У меня нет сведений об этом небе�
 
 # An external planet has no entry in the Aurelian public corpus. Catch direct
 # references without treating ordinary "земля" (soil/land) as astronomy.
-_EARTH_WORD = re.compile(r'(?<!\\w)(?:земл(?:я|и|е|ю|ей|ёй|ею|ям|ями|ях)|earth)(?!\\w)', re.I)
+_EARTH_WORD = re.compile(r'(?<!\w)(?:земл(?:я|и|е|ю|ей|ёй|ею|ям|ями|ях)|earth)(?!\w)', re.I)
 _SPACE_CONTEXT = re.compile(r'планет|орбит|космос|космич|астроном|небесн|солнечн|звезд|звёзд|спутник|расстояни|светов.{0,7}лет|систем[аеыу]', re.I)
 _SOIL_CONTEXT = re.compile(r'почв|грунт|огород|рассад|растени|цветов|садов|земледел|урожа|грядк|территори|суш[аеуы]|пахот', re.I)
 
@@ -33,7 +33,7 @@ def unknown_earth_reference(text):
 
 def forbidden_frame(text):
     """Detect out-of-character replies and explicit outside-planet claims."""
-    if re.search(r'(?i)\\b(?:в мо[её]м мире|в мо[её]й вселенной|в нашей вселенной|в этом вымышленном мире|согласно лору|в рамках вымышленной вселенной)\\b',text):
+    if re.search(r'(?i)\b(?:в мо[её]м мире|в мо[её]й вселенной|в нашей вселенной|в этом вымышленном мире|согласно лору|в рамках вымышленной вселенной)\b',text):
         return True
     return unknown_earth_reference(text)
 
