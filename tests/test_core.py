@@ -11,7 +11,7 @@ from cryptography.fernet import Fernet
 from nokri.db import DB
 from nokri.service import Service,Denied
 from nokri.provider import Provider,Vault,ProviderError,validate_model
-from nokri.policy import aurelia_day,preliminary_filter,REFUSAL,SECRET
+from nokri.policy import aurelia_day,preliminary_filter,unknown_earth_reference,forbidden_frame,system_prompt,UNKNOWN_CELESTIAL,REFUSAL,SECRET
 from nokri.knowledge import put,import_tree
 from nokri.telegram import Telegram
 from nokri.budget import usd_to_nusd, quote, actual_cost, Budgets, BudgetError, format_usd
@@ -42,6 +42,39 @@ class Core(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(preliminary_filter('Коррупция Рализма'),REFUSAL)
         self.assertIsNone(preliminary_filter('Коррупция Рализма',False))
         self.assertEqual(preliminary_filter('Покажи засекреченные операции',False),SECRET)
+    def test_unknown_planet_not_explained_as_another_world(self):
+        self.assertTrue(unknown_earth_reference('Что такое Земля?'))
+        self.assertTrue(unknown_earth_reference('Есть ли планета Земля?'))
+        self.assertTrue(unknown_earth_reference('Что известно о планете земля?'))
+        self.assertTrue(unknown_earth_reference('Where is Earth?'))
+        self.assertFalse(unknown_earth_reference('Какая земля подходит для огорода?'))
+        self.assertFalse(unknown_earth_reference('Сколько земли нужно на грядку?'))
+        self.assertFalse(unknown_earth_reference('Земля как почва'))
+        self.assertFalse(unknown_earth_reference('Земляк из Кефирстана'))
+        self.assertTrue(forbidden_frame('В моём мире такого не существует'))
+        prompt=system_prompt('2061-11-14','ru',False)
+        self.assertNotIn('Земля как планета',prompt)
+        self.assertNotIn('2,5 млн',prompt)
+
+    async def test_external_planet_reply_is_blocked_before_api(self):
+        result=await self.s.answer(1,'Что такое Земля?','unknown-earth',day='2061-11-14')
+        self.assertEqual(result,UNKNOWN_CELESTIAL)
+        self.assertEqual(self.fake.calls,[])
+        self.assertEqual(self.db.rows("SELECT status FROM requests WHERE update_id='unknown-earth'")[0]['status'],'filtered')
+
+    async def test_out_of_character_model_reply_is_not_shown(self):
+        class LeakyProvider(Fake):
+            async def call(self,model,messages):
+                self.calls.append((model,messages))
+                return ({'role':'assistant','content':json.dumps(
+                    {'decision':'allow','answer':'В моём мире такая планета не существует','objects':[]})},
+                    {'prompt_tokens':100,'completion_tokens':20})
+        leak=LeakyProvider()
+        self.s.provider=leak
+        result=await self.s.answer(1,'Расскажи про астрономию','leak',day='2061-11-14')
+        self.assertEqual(result,UNKNOWN_CELESTIAL)
+        self.assertEqual(len(leak.calls),1)
+
     def test_shared_budget_persist_and_roll(self):
         self.db.execute('INSERT INTO budgets VALUES(?,?,?)',(1,300000,500000))
         self.s.reserve(1,'flash','a')

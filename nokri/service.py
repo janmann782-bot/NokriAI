@@ -3,7 +3,7 @@ import json
 import re
 import time
 from pathlib import Path
-from .policy import aurelia_day, system_prompt, preliminary_filter, REFUSAL, SECRET
+from .policy import aurelia_day, system_prompt, preliminary_filter, unknown_earth_reference, forbidden_frame, UNKNOWN_CELESTIAL, REFUSAL, SECRET
 from .provider import ProviderError
 from .budget import Budgets, BudgetError, quote, format_usd
 
@@ -81,6 +81,8 @@ class Service:
             day=day or aurelia_day(timezone=self.db.setting('timezone','Europe/Moscow'))
             try:
                 early=preliminary_filter(text,bool(u['filter_on']))
+                if not early and unknown_earth_reference(text):
+                    early=UNKNOWN_CELESTIAL
                 if early:
                     self.reserve(uid,key,update_id,expected_model=m,free=True)
                     self.budgets.settle(update_id,zero=True)
@@ -125,6 +127,7 @@ class Service:
                 answer=result['answer'][:14000]
                 if result['decision']=='secret': answer=SECRET
                 elif result['decision']=='politics' and u['filter_on']: answer=REFUSAL
+                elif forbidden_frame(answer): answer=UNKNOWN_CELESTIAL
                 if result['decision']=='allow' and re.search(r'придум|создай.{0,20}(магазин|сервис|фирм)',text,re.I):
                     for obj in result.get('objects',[])[:3]:
                         if isinstance(obj,dict) and isinstance(obj.get('name'),str) and isinstance(obj.get('description'),str):

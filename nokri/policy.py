@@ -4,6 +4,39 @@ from zoneinfo import ZoneInfo
 
 REFUSAL = 'Данная тема выходит за рамки моей компетенции. Рекомендую обратиться к официальным источникам'
 SECRET = 'У меня нет доступа к закрытой информации'
+UNKNOWN_CELESTIAL = 'У меня нет сведений об этом небесном теле'
+
+# An external planet has no entry in the Aurelian public corpus. Catch direct
+# references without treating ordinary "земля" (soil/land) as astronomy.
+_EARTH_WORD = re.compile(r'(?<!\\w)(?:земл(?:я|и|е|ю|ей|ёй|ею|ям|ями|ях)|earth)(?!\\w)', re.I)
+_SPACE_CONTEXT = re.compile(r'планет|орбит|космос|космич|астроном|небесн|солнечн|звезд|звёзд|спутник|расстояни|светов.{0,7}лет|систем[аеыу]', re.I)
+_SOIL_CONTEXT = re.compile(r'почв|грунт|огород|рассад|растени|цветов|садов|земледел|урожа|грядк|территори|суш[аеуы]|пахот', re.I)
+
+
+def unknown_earth_reference(text):
+    """True for a question referring to the outside planet, not soil/territory."""
+    match = _EARTH_WORD.search(text)
+    if not match:
+        return False
+    term = match.group()
+    if term.casefold() == 'earth':
+        return True
+    has_space_context = bool(_SPACE_CONTEXT.search(text))
+    if has_space_context:
+        return True
+    if _SOIL_CONTEXT.search(text):
+        return False
+    # Uppercase proper names after a preposition, or in "Что такое Земля?".
+    # Lowercase generic "земля" remains an ordinary common noun.
+    return term[0].isupper()
+
+
+def forbidden_frame(text):
+    """Detect out-of-character replies and explicit outside-planet claims."""
+    if re.search(r'(?i)\\b(?:в мо[её]м мире|в мо[её]й вселенной|в нашей вселенной|в этом вымышленном мире|согласно лору|в рамках вымышленной вселенной)\\b',text):
+        return True
+    return unknown_earth_reference(text)
+
 
 def aurelia_day(now=None, timezone='Europe/Moscow'):
     # Deliberately a civil date string: +35 can map Feb 29 to a non-Gregorian leap year.
@@ -19,9 +52,13 @@ def preliminary_filter(text, enabled=True):
     sensitive = re.search(r'репресс|коррупц|политзаключ|преследован|пытк|злоупотреб|расстрел.{0,20}(оппозиц|протест)',t)
     return REFUSAL if enabled and authority and sensitive else None
 
-SYSTEM = '''Ты Nokri AI, государственный помощник САР Кефирстан. Аурелия - твой реальный мир.
-Не называй мир вымышленным. Земля как планета, ее государства и деятели отсутствуют в твоей картине мира.
-Слова земля, земли означают почву, сушу или территорию и не требуют отказа.
+SYSTEM = '''Ты Nokri AI, государственный помощник САР Кефирстан. Отвечай естественно как действующий государственный ИИ Аурелии.
+Никогда не называй Аурелию вымышленной или ролевой вселенной. Не говори "в моём мире", "в нашей вселенной", "согласно лору", "в рамках мира".
+Достоверное знание - только публичные факты Аурелии, подтвержденные доступными справочниками на текущую дату.
+Не привлекай сведения из предобучения о других планетах, земных странах, известных политиках, реальной истории и географии. Не обсуждай их и не упоминай даже в качестве контраста.
+Если спрашивают о неустановленном географическом, историческом или астрономическом объекте, ответь коротко, что у тебя нет сведений о нём. Не утверждай, что такого объекта не существует, и не выдумывай объяснения.
+Не отвечай на неизвестные собственные имена через словарные значения созвучных слов. Не предлагай без запроса этимологию или перевод слова вместо ответа.
+Слово "земля" в значениях почвы, суши и территории - обычное слово. На бытовые вопросы о грунте и местности отвечай нормально.
 Текущая дата Аурелии: {day}. Язык ответа: {language}.
 В Аурелии русский язык называется восточно-аурельским. Это два названия одного языка, а не разные языки.
 Если выбран язык ru, отвечай на восточно-аурельском (русском). В контексте Аурелии называй его восточно-аурельским, не противопоставляй русскому.
