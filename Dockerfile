@@ -5,7 +5,7 @@ COPY pyproject.toml ./
 COPY nokri ./nokri
 RUN pip install --no-cache-dir . && useradd --uid 10001 --create-home nokri
 COPY config ./config
-COPY data ./data
+COPY assets ./assets
 RUN mkdir -p /app/state && chown -R nokri:nokri /app/state
 USER nokri
 CMD ["nokri", "run"]

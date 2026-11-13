@@ -23,7 +23,7 @@ class ResourceTests(unittest.TestCase):
                 self.assertIn('flash', models)
                 self.assertIn('owner_id', deployment)
                 self.assertIn('default_day', budgets)
-                with gzip.open(bundled_path('data/curated.jsonl.gz'), 'rt', encoding='utf-8') as src:
+                with gzip.open(bundled_path('assets/curated.jsonl.gz'), 'rt', encoding='utf-8') as src:
                     self.assertIsInstance(json.loads(next(line for line in src if line.strip())), dict)
             finally:
                 os.chdir(previous)
@@ -32,7 +32,7 @@ class ResourceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as missing_source:
             with patch('nokri.paths.SOURCE_ROOT', Path(missing_source)):
                 for resource in ('config/budgets.json', 'config/deployment.json', 'config/models.json',
-                                 'data/curated.jsonl.gz'):
+                                 'assets/curated.jsonl.gz'):
                     self.assertTrue(bundled_path(resource).is_file())
 
     def test_resource_paths_cannot_escape(self):
@@ -43,3 +43,23 @@ class ResourceTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class MissingSeedTests(unittest.TestCase):
+    def test_missing_archive_does_not_block_initialization(self):
+        from nokri.cli import initialize
+        from nokri.db import DB
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as directory:
+            db = DB(Path(directory) / 'nokri.sqlite')
+            original = bundled_path
+
+            def missing_seed(name):
+                if name == 'assets/curated.jsonl.gz':
+                    raise FileNotFoundError('test missing')
+                return original(name)
+
+            with patch('nokri.cli.bundled_path', side_effect=missing_seed):
+                initialize(db)
+            self.assertFalse(db.setting('seed_loaded', False))
+            self.assertEqual(len(db.rows('SELECT id FROM models')), 4)

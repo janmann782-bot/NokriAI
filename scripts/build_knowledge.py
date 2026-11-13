@@ -9,7 +9,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from nokri.db import DB
 from nokri.knowledge import import_tree,put,load_curated
 
-root=Path(sys.argv[1]); out=Path('data'); out.mkdir(exist_ok=True)
+root=Path(sys.argv[1]); out=Path('assets'); out.mkdir(exist_ok=True)
 db=DB('state/seed.sqlite')
 report=import_tree(db,root)
 (out/'archive_manifest.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))

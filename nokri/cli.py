@@ -25,7 +25,24 @@ def initialize(db):
         if 'h3' in old or 'day' in old:
             old.pop('h3',None);old.pop('day',None);db.put_model(k,old)
     if not db.setting('seed_loaded',False):
-        load_curated(db,bundled_path('data/curated.jsonl.gz')); db.set('seed_loaded',True)
+        try:
+            # Host providers may reserve /app/data for persistent storage and omit it from Git checkouts.
+            seed=bundled_path('assets/curated.jsonl.gz')
+        except FileNotFoundError:
+            logging.error(
+                'Nokri knowledge seed missing (assets/curated.jsonl.gz). '
+                'Bot starts with existing knowledge only; seed_loaded stays false for the next deployment.'
+            )
+        else:
+            load_curated(db,seed)
+            db.set('seed_loaded',True)
+
+def _knowledge_seed_available():
+    try:
+        return bundled_path('assets/curated.jsonl.gz').is_file()
+    except FileNotFoundError:
+        return False
+
 
 def main():
     os.umask(0o077)
@@ -34,7 +51,11 @@ def main():
                         help='Команда (по умолчанию: run для BotHost и других хостингов)')
     parser.add_argument('path',nargs='?')
     args=parser.parse_args()
-    db=DB(os.getenv('DATABASE_PATH','state/nokri.sqlite'))
+    # Bothost exposes BOT_ID and preserves /app/data between deployments.
+    # Docker Compose and local installs keep the existing state/ default.
+    db_path=(os.getenv('DATABASE_PATH') or
+             ('/app/data/nokri.sqlite' if os.getenv('BOT_ID') else 'state/nokri.sqlite'))
+    db=DB(db_path)
     initialize(db)
     if not os.getenv('OWNER_ID'):
         os.environ['OWNER_ID']=str(json.loads(bundled_path('config/deployment.json').read_text(encoding='utf-8'))['owner_id'])
@@ -60,8 +81,13 @@ def main():
                           'default_budget':db.setting('default_budget'),
                           'telegram_configured':bool(os.getenv('TELEGRAM_BOT_TOKEN')),
                           'master_configured':bool(os.getenv('MASTER_KEY') or master_key_path(db.path).is_file()),
+                          'knowledge_seed_available':_knowledge_seed_available(),
                           'master_mode':('environment' if os.getenv('MASTER_KEY') else
                                          'local_file' if master_key_path(db.path).is_file() else 'auto_on_run')},ensure_ascii=False,indent=2)); return
+    # Bothost may export BOT_TOKEN rather than TELEGRAM_BOT_TOKEN.
+    if not os.getenv('TELEGRAM_BOT_TOKEN'):
+        token=os.getenv('BOT_TOKEN') or os.getenv('API_TOKEN')
+        if token: os.environ['TELEGRAM_BOT_TOKEN']=token
     for env in ('TELEGRAM_BOT_TOKEN','OWNER_ID'):
         if not os.getenv(env): parser.error('Задайте '+env+' в окружении. См. README.md')
     owner=int(os.environ['OWNER_ID'])
