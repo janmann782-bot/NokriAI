@@ -1,0 +1,1 @@
+"""Nokri AI Telegram service."""

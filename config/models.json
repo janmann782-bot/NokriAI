@@ -1,0 +1,59 @@
+{
+  "flash": {
+    "name": "Nokri 3.4 Flash Blyska",
+    "rank": 34,
+    "provider": "anymodel",
+    "base_url": "https://anymodel.org/v1",
+    "api_model": "glm/glm-4.5-flash",
+    "enabled": false,
+    "approval_required": true,
+    "input_price": null,
+    "output_price": null,
+    "params": {},
+    "note": "Предложение: GLM 4.5 Flash вместо DeepSeek V4 Flash. Наличие у AnyModel нужно проверить /catalog, до этого не включать",
+    "max_output_tokens": 4096
+  },
+  "etajd": {
+    "name": "Nokri 4 Etajd",
+    "rank": 40,
+    "provider": "anymodel",
+    "base_url": "https://anymodel.org/v1",
+    "api_model": "qwen/qwen3.8-max",
+    "enabled": false,
+    "approval_required": false,
+    "input_price": 0.03,
+    "output_price": 0.03,
+    "params": {},
+    "pricing_checked": "2026-11-13",
+    "max_output_tokens": 4096
+  },
+  "joz": {
+    "name": "Nokri 4.1 Jøζ\"",
+    "rank": 41,
+    "provider": "anymodel",
+    "base_url": "https://anymodel.org/v1",
+    "api_model": "ds/deepseek-v4-pro",
+    "enabled": false,
+    "approval_required": false,
+    "input_price": 0.025,
+    "output_price": 0.025,
+    "params": {},
+    "pricing_checked": "2026-11-13",
+    "max_output_tokens": 4096
+  },
+  "mudris": {
+    "name": "Nokri 5 Mudris",
+    "rank": 50,
+    "provider": "anymodel",
+    "base_url": "https://anymodel.org/v1",
+    "api_model": "glm/glm-5.3",
+    "enabled": false,
+    "approval_required": true,
+    "input_price": 0.075,
+    "output_price": 0.075,
+    "params": {},
+    "note": "GLM 5.3 - верхняя ступень после полного удаления Kimi. Nokri 5 Mudris - предлагаемое название",
+    "pricing_checked": "2026-11-13",
+    "max_output_tokens": 4096
+  }
+}

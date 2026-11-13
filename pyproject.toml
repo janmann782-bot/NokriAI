@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "nokri-ai"
+version = "0.2.0"
+requires-python = ">=3.11"
+dependencies = ["httpx>=0.27,<1", "cryptography>=43,<47", "python-docx>=1.1,<2", "pypdf>=5,<7"]
+[project.scripts]
+nokri = "nokri.cli:main"
+[tool.setuptools.packages.find]
+include = ["nokri*"]

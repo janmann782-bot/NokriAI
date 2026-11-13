@@ -1,0 +1,38 @@
+test_animation_failure_sends_complete_text (test_core.Core.test_animation_failure_sends_complete_text) ... ok
+test_animation_final_frame_and_toggle (test_core.Core.test_animation_final_frame_and_toggle) ... ok
+test_budget_admin_ui_defaults_owner_protection (test_core.Core.test_budget_admin_ui_defaults_owner_protection) ... ok
+test_calendar (test_core.Core.test_calendar) ... ok
+test_cannot_reconcile_active_request (test_core.Core.test_cannot_reconcile_active_request) ... ok
+test_concurrent_atomic (test_core.Core.test_concurrent_atomic) ... ok
+test_debit_actual_release_reserve_and_one_common_balance (test_core.Core.test_debit_actual_release_reserve_and_one_common_balance) ... ok
+test_dedup_failed_refund (test_core.Core.test_dedup_failed_refund) ... ok
+test_disabled_model_and_access (test_core.Core.test_disabled_model_and_access) ... ok
+test_fail_refund (test_core.Core.test_fail_refund) ... ok
+test_future_source_never_in_provider_payload (test_core.Core.test_future_source_never_in_provider_payload) ... ok
+test_history_switch_and_clear (test_core.Core.test_history_switch_and_clear) ... ok
+test_knowledge_time_access_status (test_core.Core.test_knowledge_time_access_status) ... ok
+test_legacy_cost_migration_never_assumes_unknown_is_zero (test_core.Core.test_legacy_cost_migration_never_assumes_unknown_is_zero) ... ok
+test_local_filter (test_core.Core.test_local_filter) ... ok
+test_missing_usage_does_not_become_free (test_core.Core.test_missing_usage_does_not_become_free) ... ok
+test_money_precision_validation (test_core.Core.test_money_precision_validation) ... ok
+test_no_request_count_limits_remain (test_core.Core.test_no_request_count_limits_remain) ... ok
+test_objects_consistency (test_core.Core.test_objects_consistency) ... ok
+test_paid_empty_api_response_is_accounted (test_core.Core.test_paid_empty_api_response_is_accounted) ... ok
+test_pending_holds_survive_reset_rollover_and_restart (test_core.Core.test_pending_holds_survive_reset_rollover_and_restart) ... ok
+test_provider_errors_distinguish_uncertain_billing (test_core.Core.test_provider_errors_distinguish_uncertain_billing) ... ok
+test_provider_validation (test_core.Core.test_provider_validation) ... ok
+test_raw_import_quarantine (test_core.Core.test_raw_import_quarantine) ... ok
+test_semantic_filter_and_override (test_core.Core.test_semantic_filter_and_override) ... ok
+test_shared_budget_persist_and_roll (test_core.Core.test_shared_budget_persist_and_roll) ... ok
+test_tariff_snapshot_and_overspend_blocks_next_call (test_core.Core.test_tariff_snapshot_and_overspend_blocks_next_call) ... ok
+test_telegram_permissions_reset_rotation (test_core.Core.test_telegram_permissions_reset_rotation) ... ok
+test_unknown_usage_and_timeout_hold_until_reconciled (test_core.Core.test_unknown_usage_and_timeout_hold_until_reconciled) ... ok
+test_unlimited_expiry_owner_and_ban (test_core.Core.test_unlimited_expiry_owner_and_ban) ... ok
+test_vault (test_core.Core.test_vault) ... ok
+test_wire_provider_key_rotation_usage (test_core.Core.test_wire_provider_key_rotation_usage) ... ok
+test_zero_cost_filter_and_unknown_model_tariff (test_core.Core.test_zero_cost_filter_and_unknown_model_tariff) ... ok
+
+----------------------------------------------------------------------
+Ran 33 tests in 0.390s
+
+OK

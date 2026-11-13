@@ -3,6 +3,3 @@
 state/
 __pycache__/
 *.pyc
-*.sqlite*
-*.zip
-data/curated.jsonl

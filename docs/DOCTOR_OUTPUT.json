@@ -1,0 +1,28 @@
+{
+  "database": [
+    {
+      "integrity_check": "ok"
+    }
+  ],
+  "models": 4,
+  "knowledge": [
+    {
+      "status": "approved",
+      "access": "public",
+      "n": 42250
+    },
+    {
+      "status": "draft",
+      "access": "restricted",
+      "n": 43937
+    }
+  ],
+  "owner_configured": true,
+  "owner_id": 7787565361,
+  "default_budget": {
+    "h3_nusd": 10000000,
+    "day_nusd": 30000000
+  },
+  "telegram_configured": false,
+  "master_configured": false
+}
