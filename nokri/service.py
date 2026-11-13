@@ -104,7 +104,7 @@ class Service:
         # drowned named institutions in broad references to their country.
         stop={'что','как','кто','где','когда','почему','сколько','какие','назови',
               'расскажи','расскажите','пожалуйста','этот','этом','было','были'}
-        terms=[t for t in dict.fromkeys(re.findall(r'[^\\W_]{3,}',text.casefold()))
+        terms=[t for t in dict.fromkeys(re.findall(r'[^\W_]{3,}',text.casefold()))
                if t not in stop][:12]
         if not terms: return []
         # FTS5 searches against individual words, not loose character substrings.

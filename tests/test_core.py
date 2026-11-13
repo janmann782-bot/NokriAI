@@ -204,7 +204,7 @@ class Core(unittest.IsolatedAsyncioTestCase):
         load_curated(self.db,bundled_path('assets/canon_parliament_2061.jsonl'))
         await self.s.answer(1,'Парламент Кефирстана','parliament-2061',day='2061-11-14')
         payload=self.fake.calls[-1][1]
-        context=json.loads(payload[1]['content'].split('\\n',1)[1])
+        context=json.loads(payload[1]['content'].split('\n',1)[1])
         self.assertTrue(any('Союзное собрание' in item['text'] and
                             'Совет автономий' in item['text'] for item in context['sources']))
         self.assertTrue(any('Аурелия Вики' in item['source'] for item in context['sources']))
