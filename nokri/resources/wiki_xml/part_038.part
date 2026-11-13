@@ -1,0 +1,206 @@
+ .mw-parser-output .aurelia-world-nav,.mw-parser-output .aurelia-topics,.mw-parser-output .aurelia-path { display:none; }
+ .mw-parser-output .aurelia-table-scroll { overflow:visible; }
+ .mw-parser-output .portable-infobox.pi-theme-aurelia,.mw-parser-output table.wikitable { background:white; color:#111; border-color:#aaa; }
+}
+.mw-parser-output .aurelia-panel-grid { width:100%; border-spacing:14px; }
+.mw-parser-output .aurelia-panel { vertical-align:top; border:0; padding:16px; background:var(--aur-panel); }
+.mw-parser-output .aurelia-panel-title { font-weight:600; margin-bottom:8px; }
+.mw-parser-output .aurelia-center { text-align:center; }
+.mw-parser-output table.aurelia-legacy-infobox { float:right; width:320px; max-width:100%; margin:0 0 24px 28px;  }
+.mw-parser-output table.aurelia-legacy-infobox caption { background:var(--aur-raised); color:var(--aur-text); font:600 21px/1.35 inherit; padding:14px; }
+.mw-parser-output table.aurelia-legacy-infobox img { max-width:100%; height:auto; object-fit:contain; }
+@media(max-width:700px) {
+ .mw-parser-output table.aurelia-legacy-infobox { float:none; width:100%; margin:18px 0 24px; }
+ .mw-parser-output .aurelia-panel { display:block; width:100%; margin:0 0 12px; }
+ .mw-parser-output .aurelia-panel-grid { border-spacing:0; }
+}
+
+.mw-parser-output h2, .mw-parser-output h3, .mw-parser-output .aurelia-topics, .mw-parser-output .aurelia-country-nav, .mw-parser-output .aurelia-world-nav, .mw-parser-output .aurelia-index li { border:0; }
+.mw-parser-output .portable-infobox.pi-theme-aurelia, .mw-parser-output table.aurelia-legacy-infobox { border:0; }
+.mw-parser-output .portable-infobox.pi-theme-aurelia .pi-header { border:0; }
+
+.portable-infobox .pi-data[data-source="нижняя_палата_схема"],
+.portable-infobox .pi-data[data-source="верхняя_палата_схема"] {
+ display:block;
+}
+.portable-infobox .pi-data[data-source="нижняя_палата_схема"] &gt; .pi-data-value,
+.portable-infobox .pi-data[data-source="верхняя_палата_схема"] &gt; .pi-data-value {
+ width:100%;
+ flex-basis:100%;
+}
+.aurelia-parliament-block { width:100%; }
+.aurelia-parliament-legend {
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:6px 10px;
+ margin-top:12px;
+ font-size:12px;
+ line-height:1.45;
+}
+.aurelia-parliament-party { display:flex; align-items:center; gap:5px; min-width:0; }
+.aurelia-parliament-party &gt; b { margin-left:auto; font-variant-numeric:tabular-nums; }
+.aurelia-parliament-marker { display:inline-block; width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+</text></revision></page><page><title>MediaWiki:Wiki-navigation</title><ns>8</ns><revision><timestamp>2026-11-11T09:51:49Z</timestamp><contributor><username>AureliaWikiImport</username></contributor><model>wikitext</model><format>text/x-wiki</format><text xml:space="preserve" bytes="867">*Государства Аурелии|Государства
+**Государства Аурелии|Все государства
+**Турбанская Республика|Турбания
+**Кефирстан|Кефирстан
+**Йогуртстан|Йогуртстан
+**Бордуссния|Бордуссния
+*История Аурелии|История
+**История Аурелии|Исторические эпохи
+**Войны Аурелии|Войны и конфликты
+**Люди Аурелии|Люди
+*География Аурелии|Мир Аурелии
+**Карты Аурелии|Карты
+**Политика Аурелии|Политика
+**Народы и языки Аурелии|Народы и языки
+**Экономика Аурелии|Экономика
+**Организации Аурелии|Организации
+</text></revision></page><page><title>MediaWiki:Wiki-description-site-meta</title><ns>8</ns><revision><timestamp>2026-11-11T09:51:49Z</timestamp><contributor><username>AureliaWikiImport</username></contributor><model>wikitext</model><format>text/x-wiki</format><text xml:space="preserve" bytes="95">Энциклопедия государств, народов и истории Аурелии
+</text></revision></page><page><title>Модуль:Парламент Кефирстана</title><ns>828</ns><revision><timestamp>2026-11-12T22:04:14Z</timestamp><contributor><username>AureliaWikiImport</username></contributor><model>Scribunto</model><format>text/plain</format><text xml:space="preserve" bytes="6616">local p = {}
+local parties = {
+    {key = 'ЛПК', color = '#F2C230', page = 'Либертарианская Партия Кефирстана'},
+    {key = 'НПК', color = '#D44848', page = 'Народная Партия Кефирстана'},
+    {key = 'ПНЕК', color = '#345DA8', page = 'Партия Национального Единства Кефирстана'},
+    {key = 'СМХ', color = '#529746', page = 'Союз Молозорьских Хозяев'},
+    {key = 'ТПЛ', color = '#C47C3D', page = 'Твороградская Производственная Лига'},
+    {key = 'ПМС', color = '#27999E', page = 'Партия Муниципального Счета'},
+    {key = 'ПЧМ', color = '#9462B6', page = 'Партия Честного Мола'},
+    {key = 'Старое Полотно', color = '#795645', page = 'Старое Полотно'},
+    {key = 'Другие', color = '#A6A9AE'},
+    {key = 'Независимые', color = '#6B7078'}
+}
+
+local function escape(value)
+    return tostring(value):gsub('&amp;', '&amp;amp;'):gsub('&lt;', '&amp;lt;'):gsub('&gt;', '&amp;gt;'):gsub('"', '&amp;quot;')
+end
+
+local function invalid(message)
+    return '&lt;strong class="error"&gt;Ошибка схемы парламента: ' .. escape(message) .. '&lt;/strong&gt;'
+end
+
+local function capacity(radius, pitch)
+    local ratio = math.min(1, pitch / (2 * radius))
+    if ratio &gt;= 1 then return 1 end
+    return math.max(1, math.floor(math.pi / (2 * math.asin(ratio))))
+end
+
+local function layout(total)
+    local scale, width = 2, 300
+    local seatRadius, rows
+    if total &lt;= 60 then seatRadius, rows = 5.1 * scale, 4
+    elseif total &lt;= 110 then seatRadius, rows = 4.5 * scale, 5
+    elseif total &lt;= 170 then seatRadius, rows = 3.9 * scale, 6
+    elseif total &lt;= 280 then seatRadius, rows = 3.2 * scale, 7
+    else seatRadius, rows = 2.9 * scale, 8 end
+    rows = math.min(rows, total)
+    local pitch = 2 * seatRadius * math.sqrt(2) + 1.8 * scale
+    local inner = 24 * scale
+    local step = math.max(10.8 * scale, pitch + 1.4 * scale)
+    local caps, capSum = {}, 0
+    while true do
+        caps, capSum = {}, 0
+        for i = 1, rows do
+            caps[i] = capacity(inner + step * (i - 1), pitch)
+            capSum = capSum + caps[i]
+        end
+        if capSum &gt;= total then break end
+        rows = rows + 1
+    end
+    local counts, used = {}, 0
+    for i = 1, rows do
+        counts[i] = math.max(1, math.min(caps[i], math.floor(total * caps[i] / capSum)))
+        used = used + counts[i]
+    end
+    while used &gt; total do
+        for i = 1, rows do
+            if counts[i] &gt; 1 and used &gt; total then
+                counts[i], used = counts[i] - 1, used - 1
+            end
+        end
+    end
+    while used &lt; total do
+        for i = rows, 1, -1 do
+            if counts[i] &lt; caps[i] and used &lt; total then
+                counts[i], used = counts[i] + 1, used + 1
+            end
+        end
+    end
+    local outer = inner + step * (rows - 1)
+    local padding = 10 * scale
+    local fit = math.min(1, (width / 2 - padding) / (outer + seatRadius))
+    local radius = seatRadius * fit
+    local baseline = padding + (outer + seatRadius) * fit
+    local height = math.ceil(2 * padding + (outer + 2 * seatRadius) * fit)
+    local seats = {}
+    for row = 1, rows do
+        local arc = (inner + step * (row - 1)) * fit
+        for j = 1, counts[row] do
+            local angle = counts[row] == 1 and math.pi / 2 or math.pi - (j - 0.5) * math.pi / counts[row]
+            seats[#seats + 1] = {
+                x = width / 2 + arc * math.cos(angle),
+                y = baseline - arc * math.sin(angle),
+                radius = radius, row = row, angle = angle
+            }
+        end
+    end
+    table.sort(seats, function(a, b)
+        if a.angle == b.angle then return a.row &gt; b.row end
+        return a.angle &gt; b.angle
+    end)
+    return seats, width, height
+end
+
+function p.draw(args)
+    local total = tonumber(args['всего'])
+    if not total or total &lt; 1 or total &gt; 1000 or total ~= math.floor(total) then
+        return invalid('число мест должно быть целым от 1 до 1 000')
+    end
+    local active, sum, description = {}, 0, {}
+    for _, party in ipairs(parties) do
+        local raw = args[party.key]
+        local count = (raw == nil or raw == '') and 0 or tonumber(raw)
+        if not count or count &lt; 0 or count ~= math.floor(count) then
+            return invalid('некорректное число мест у ' .. party.key)
+        end
+        if count &gt; 0 then
+            active[#active + 1] = {key = party.key, color = party.color, page = party.page, count = count}
+            sum = sum + count
+            description[#description + 1] = party.key .. ' - ' .. count
+        end
+    end
+    if sum ~= total then
+        return invalid('сумма мест ' .. sum .. ' не совпадает с составом ' .. total)
+    end
+    local seats, width, height = layout(total)
+    local out = {'&lt;div class="aurelia-parliament-block"&gt;&lt;div class="aurelia-parliament-plot" role="img" aria-label="' .. escape(table.concat(description, ', ')) .. '" style="position:relative;width:100%;line-height:0"&gt;'}
+    out[#out + 1] = string.format('&lt;span aria-hidden="true" style="display:block;padding-top:%.5f%%"&gt;&lt;/span&gt;', height / width * 100)
+    local index = 1
+    for _, party in ipairs(active) do
+        for _ = 1, party.count do
+            local seat = seats[index]
+            out[#out + 1] = string.format('&lt;span class="aurelia-parliament-seat" data-party="%s" aria-hidden="true" title="%s" style="display:block;position:absolute;border-radius:50%%;left:%.5f%%;top:%.5f%%;width:%.5f%%;height:%.5f%%;background-color:%s"&gt;&lt;/span&gt;', escape(party.key), escape(party.key), (seat.x - seat.radius) / width * 100, (seat.y - seat.radius) / height * 100, seat.radius * 2 / width * 100, seat.radius * 2 / height * 100, party.color)
+            index = index + 1
+        end
+    end
+    out[#out + 1] = '&lt;/div&gt;&lt;div class="aurelia-parliament-legend"&gt;'
+    for _, party in ipairs(active) do
+        local name = party.page and '[[' .. party.page .. '|' .. party.key .. ']]' or party.key
+        out[#out + 1] = '&lt;span class="aurelia-parliament-party"&gt;&lt;span class="aurelia-parliament-marker" aria-hidden="true" style="background-color:' .. party.color .. '"&gt;&lt;/span&gt;&lt;span&gt;' .. name .. '&lt;/span&gt;&lt;b&gt;' .. party.count .. '&lt;/b&gt;&lt;/span&gt;'
+    end
+    out[#out + 1] = '&lt;/div&gt;&lt;/div&gt;'
+    return table.concat(out)
+end
+
+function p.render(frame)
+    local parent = frame:getParent()
+    return p.draw(parent and parent.args or frame.args)
+end
+
+return p
+</text></revision></page><page><title>Шаблон:Схема парламента Кефирстана</title><ns>10</ns><revision><timestamp>2026-11-12T22:04:14Z</timestamp><contributor><username>AureliaWikiImport</username></contributor><model>wikitext</model><format>text/x-wiki</format><text xml:space="preserve" bytes="399">&lt;includeonly&gt;{{#invoke:Парламент Кефирстана|render}}&lt;/includeonly&gt;&lt;noinclude&gt;Распределение мест по партиям Кефирстана
+
+&lt;pre&gt;{{Схема парламента Кефирстана|всего=240|ЛПК=168|НПК=40|ПНЕК=29|СМХ=1|ТПЛ=1|Независимые=1}}&lt;/pre&gt;
+
+[[Категория:Шаблоны Аурелии]]&lt;/noinclude&gt;
+</text></revision></page></mediawiki>
