@@ -2,6 +2,7 @@ import asyncio
 from contextlib import suppress
 import json
 import logging
+from pathlib import Path
 import time
 import httpx
 from .service import Denied
@@ -10,6 +11,16 @@ from .policy import aurelia_day
 from .budget import BudgetError, usd_to_nusd, format_usd, decimal, SCALE, DEFAULT_BUDGET, rates
 
 log=logging.getLogger('nokri')
+
+
+def safe_error_signature(exc):
+    """Only report exception type and code location. Never log tokens or prompts."""
+    frame=exc.__traceback__
+    while frame is not None and frame.tb_next is not None:
+        frame=frame.tb_next
+    if frame is None:
+        return type(exc).__name__,'unknown'
+    return type(exc).__name__,Path(frame.tb_frame.f_code.co_filename).name+':'+str(frame.tb_lineno)
 ADMIN_HELP='''Панель управления Nokri
 /users - последние пользователи
 /user ID - карточка
@@ -105,10 +116,11 @@ class Telegram:
             msg=update.get('message',{}); uid=msg.get('from',{}).get('id')
             if uid is None or msg.get('chat',{}).get('type')!='private': return
             text=msg.get('text','')
-        chat=msg['chat']['id']; u=self.db.user(uid)
-        if u['blocked'] and not self.s.owner(uid):
-            await self.send(chat,'Доступ заблокирован'); return
+        chat=msg['chat']['id']
         try:
+            u=self.db.user(uid)
+            if u['blocked'] and not self.s.owner(uid):
+                await self.send(chat,'Доступ заблокирован'); return
             if text=='/cancel':
                 self.pending.pop(uid,None); await self.send(chat,'Ввод отменен'); return
             if uid in self.pending:
@@ -135,10 +147,13 @@ class Telegram:
             await self.animated_answer(chat,answer,uid)
         except (Denied,ValueError,KeyError,IndexError) as e:
             await self.send(chat,str(e) if isinstance(e,(Denied,ValueError)) else 'Неверные аргументы. Откройте /admin или /help')
-        except Exception:
-            # Do not log exception bodies/URLs: SDKs may include token or prompt.
-            log.error('handler_failed uid=%s update=%s',uid,update.get('update_id'))
-            await self.send(chat,'Ошибка обработки. Код: internal_error')
+        except Exception as exc:
+            # Only safe diagnostics: class and source line, never exception
+            # bodies, URLs, raw JSON, user text or API credentials.
+            kind,where=safe_error_signature(exc)
+            log.error('handler_failed uid=%s update=%s error_type=%s origin=%s',
+                      uid,update.get('update_id'),kind,where)
+            await self.send(chat,'Ошибка обработки. Код: internal_error. Запрос: '+str(update.get('update_id','?')))
 
     async def command(self,uid,chat,text):
         args=text.split(); cmd=args[0].split('@')[0]; s=self.s

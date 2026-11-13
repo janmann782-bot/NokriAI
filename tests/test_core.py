@@ -11,7 +11,7 @@ from cryptography.fernet import Fernet
 from nokri.db import DB
 from nokri.service import Service,Denied
 from nokri.provider import Provider,Vault,ProviderError,validate_model
-from nokri.policy import aurelia_day,preliminary_filter,unknown_earth_reference,forbidden_frame,system_prompt,UNKNOWN_CELESTIAL,REFUSAL,SECRET
+from nokri.policy import aurelia_day,preliminary_filter,unknown_earth_reference,forbidden_frame,system_prompt,is_nokri_identity_question,backend_disclosure,UNKNOWN_CELESTIAL,REFUSAL,SECRET
 from nokri.knowledge import put,import_tree
 from nokri.telegram import Telegram
 from nokri.budget import usd_to_nusd, quote, actual_cost, Budgets, BudgetError, format_usd
@@ -112,6 +112,45 @@ class Core(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(self.s.language_help_requested('Переведи слово на сильмир'))
         self.assertEqual(self.s.requested_output_language('Ответь на новосильмире'),'novosilmir')
         self.assertIsNone(self.s.requested_output_language('Что такое сильмир?'))
+
+    async def test_nokri_is_its_own_selected_model(self):
+        for i,k in enumerate(('flash','etajd','joz','mudris')):
+            self.db.execute('UPDATE users SET model=? WHERE id=1',(k,))
+            name=self.db.model(k)['name']
+            self.assertTrue(is_nokri_identity_question('Какая ты модель?'))
+            answer=await self.s.answer(1,'Какая ты модель?',str(4000+i),day='2061-11-14')
+            self.assertEqual(answer,'Я '+name+', государственный ИИ САР Кефирстан.')
+        self.assertEqual(self.fake.calls,[])
+        self.assertFalse(is_nokri_identity_question('Сколько автономий в Кефирстане?'))
+
+    async def test_provider_identity_is_not_in_system_or_visible_answer(self):
+        self.db.execute('UPDATE users SET model=? WHERE id=1',('etajd',))
+        await self.s.answer(1,'Привет','model-system',day='2061-11-14')
+        prompt=self.fake.calls[-1][1][0]['content']
+        self.assertIn('Nokri 4 Etajd',prompt)
+        self.assertNotIn('qwen/qwen',prompt)
+        self.assertNotIn('AnyModel',prompt)
+        self.assertTrue(backend_disclosure('Я основан на Qwen 3.8 Max'))
+
+        class LeakyProvider(Fake):
+            async def call(self,model,messages):
+                self.calls.append((model,messages))
+                return {'role':'assistant','content':json.dumps(
+                    {'decision':'allow','answer':'Я построен на Qwen', 'objects':[]})}, {'prompt_tokens':100,'completion_tokens':20}
+        self.s.provider=LeakyProvider()
+        answer=await self.s.answer(1,'Привет снова','model-leak',day='2061-11-14')
+        self.assertEqual(answer,'Я Nokri 4 Etajd, государственный ИИ САР Кефирстан.')
+
+    async def test_null_objects_response_does_not_raise_internal_error(self):
+        class NullObjects(Fake):
+            async def call(self,model,messages):
+                self.calls.append((model,messages))
+                return {'role':'assistant','content':json.dumps(
+                    {'decision':'allow','answer':'Пример магазина', 'objects':None})}, {'prompt_tokens':100,'completion_tokens':20}
+        self.s.provider=NullObjects()
+        response=await self.s.answer(1,'Придумай магазин','null-objects',day='2061-11-14')
+        self.assertEqual(response,'Пример магазина')
+        self.assertEqual(self.db.rows('SELECT count(*) n FROM objects')[0]['n'],0)
 
     def test_shared_budget_persist_and_roll(self):
         self.db.execute('INSERT INTO budgets VALUES(?,?,?)',(1,300000,500000))

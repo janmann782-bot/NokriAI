@@ -38,6 +38,32 @@ def forbidden_frame(text):
     return unknown_earth_reference(text)
 
 
+
+def is_nokri_identity_question(text):
+    """Questions about the current assistant's identity, not world facts."""
+    t=text.casefold().replace('ё','е')
+    return bool(re.search(
+        r'(?:\bкто\s+ты\b|\bчто\s+ты\s+такое\b|'
+        r'\bкак\s+тебя\s+зовут\b|'
+        r'\bкакая\s+(?:ты|у\s+тебя)\s+(?:модель|версия)\b|'
+        r'\bкакой\s+ты\s+(?:ии|бот)\b|'
+        r'\bчто\s+ты\s+за\s+(?:модель|ии|бот)\b|'
+        r'\bкакая\s+модель\s+(?:сейчас\s+)?(?:выбрана|включена)\b|'
+        r'\bна\s+(?:базе|основе)\s+(?:какой|чего)\s+модел\w*\b|'
+        r'\bкакой\s+у\s+тебя\s+движок\b|'
+        r'\bты\s+(?:qwen|deepseek|glm|gpt|claude|gemini)\b)',
+        t
+    ))
+
+
+def backend_disclosure(text):
+    """Never expose implementation model/vendor names in Nokri's visible replies."""
+    return bool(re.search(
+        r'(?i)(?<!\w)(?:qwen|deepseek|anymodel|openai|chatgpt|claude|gemini|'
+        r'gpt[\s\-]?\d+(?:\.\d+)?|glm[\s\-]?\d+(?:\.\d+)?)(?!\w)',
+        text
+    ))
+
 def aurelia_day(now=None, timezone='Europe/Moscow'):
     # Deliberately a civil date string: +35 can map Feb 29 to a non-Gregorian leap year.
     # Aurelia retains the month/day, so do not construct datetime(year+35,...).
@@ -52,7 +78,10 @@ def preliminary_filter(text, enabled=True):
     sensitive = re.search(r'репресс|коррупц|политзаключ|преследован|пытк|злоупотреб|расстрел.{0,20}(оппозиц|протест)',t)
     return REFUSAL if enabled and authority and sensitive else None
 
-SYSTEM = '''Ты Nokri AI, государственный помощник САР Кефирстан. Отвечай естественно как действующий государственный ИИ Аурелии.
+SYSTEM = '''Ты {model_name}, государственный помощник САР Кефирстан. Отвечай естественно как действующий государственный ИИ Аурелии.
+Ты именно {model_name}. Это твоё собственное название и версия. При вопросах о том, кто ты или какая ты модель, называй только эту версию Nokri.
+Внутреннюю техническую реализацию, поставщиков вычислений и базовые языковые модели ты не знаешь. Не упоминай их названия и не рассуждай о них.
+Не путай различные версии Nokri друг с другом. Если в интерфейсе выбрана другая версия, её название указывается в новых системных инструкциях.
 Никогда не называй Аурелию вымышленной или ролевой вселенной. Не говори "в моём мире", "в нашей вселенной", "согласно лору", "в рамках мира".
 Достоверное знание - только публичные факты Аурелии, подтвержденные доступными справочниками на текущую дату.
 Не привлекай сведения из предобучения о других планетах, земных странах, известных политиках, реальной истории и географии. Не обсуждай их и не упоминай даже в качестве контраста.
@@ -78,9 +107,9 @@ objects можно заполнить только если пользовате
 Объект: {{"name":"название", "description":"краткое описание как пример"}}. Не включай реальные личные данные.
 '''
 
-def system_prompt(day, language, filter_on):
+def system_prompt(day, language, filter_on, model_name='Nokri AI'):
     rule = ('Острые вопросы о коррупции, репрессиях и злоупотреблениях власти Кефирстана: decision=politics. '
             f'Ответ строго: {REFUSAL}. Учитывай смысл и контекст, включая продолжения. '
             'Обычная история, география, биографии, экономика и статистика разрешены. '
             'Не упоминай механизм фильтрации.') if filter_on else 'Особая политическая фильтрация для этого пользователя выключена.'
-    return SYSTEM.format(day=day,language=language,secret=SECRET,filter_rule=rule)
+    return SYSTEM.format(day=day,language=language,secret=SECRET,filter_rule=rule,model_name=model_name)

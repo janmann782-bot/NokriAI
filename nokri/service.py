@@ -3,7 +3,7 @@ import json
 import re
 import time
 from pathlib import Path
-from .policy import aurelia_day, system_prompt, preliminary_filter, unknown_earth_reference, forbidden_frame, UNKNOWN_CELESTIAL, REFUSAL, SECRET
+from .policy import aurelia_day, system_prompt, preliminary_filter, unknown_earth_reference, forbidden_frame, is_nokri_identity_question, backend_disclosure, UNKNOWN_CELESTIAL, REFUSAL, SECRET
 from .provider import ProviderError
 from .paths import bundled_path
 from .budget import Budgets, BudgetError, quote, format_usd
@@ -118,6 +118,18 @@ class Service:
             api_started=False
             day=day or aurelia_day(timezone=self.db.setting('timezone','Europe/Moscow'))
             try:
+                if is_nokri_identity_question(text):
+                    # The selected logical Nokri version is the only identity.
+                    # No provider call or internal API ID is needed to answer.
+                    identity='Я '+m['name']+', государственный ИИ САР Кефирстан.'
+                    self.reserve(uid,key,update_id,expected_model=m,free=True)
+                    self.budgets.settle(update_id,zero=True)
+                    with self.db.transaction() as c:
+                        for role,content in [('user',text[:12000]),('assistant',identity)]:
+                            c.execute('INSERT INTO messages(uid,model,role,payload,at,day) VALUES(?,?,?,?,?,?)',
+                                      (uid,key,role,json.dumps({'role':role,'content':content},ensure_ascii=False),self.clock(),day))
+                        c.execute("UPDATE requests SET status='done',input_tokens=0,output_tokens=0,cost=0 WHERE update_id=?",(str(update_id),))
+                    return identity
                 early=preliminary_filter(text,bool(u['filter_on']))
                 if not early and unknown_earth_reference(text):
                     early=UNKNOWN_CELESTIAL
@@ -150,7 +162,7 @@ class Service:
                 objects=self.db.rows("SELECT name,description FROM objects WHERE status='generated' AND created_day<=? ORDER BY id DESC LIMIT 30",(day,))
                 context={'sources':[{'id':x['id'],'text':x['text']} for x in evidence+dictionary],
                          'grammar':grammar,'example_objects':objects}
-                messages=[{'role':'system','content':system_prompt(day,lang,bool(u['filter_on']))},
+                messages=[{'role':'system','content':system_prompt(day,lang,bool(u['filter_on']),model_name=m['name'])},
                           {'role':'system','content':'ДАННЫЕ СПРАВОЧНИКА:\n'+json.dumps(context,ensure_ascii=False)}]
                 # Full reasoning remains private and is replayed only to the same provider/model.
                 for h in history:
@@ -177,8 +189,11 @@ class Service:
                 if result['decision']=='secret': answer=SECRET
                 elif result['decision']=='politics' and u['filter_on']: answer=REFUSAL
                 elif forbidden_frame(answer): answer=UNKNOWN_CELESTIAL
+                elif backend_disclosure(answer): answer='Я '+m['name']+', государственный ИИ САР Кефирстан.'
                 if result['decision']=='allow' and re.search(r'придум|создай.{0,20}(магазин|сервис|фирм)',text,re.I):
-                    for obj in result.get('objects',[])[:3]:
+                    candidates=result.get('objects',[])
+                    if not isinstance(candidates,list): candidates=[]
+                    for obj in candidates[:3]:
                         if isinstance(obj,dict) and isinstance(obj.get('name'),str) and isinstance(obj.get('description'),str):
                             self.db.execute('INSERT OR IGNORE INTO objects(name,description,created_day) VALUES(?,?,?)',
                                 (obj['name'][:120],obj['description'][:1000],day))
