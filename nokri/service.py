@@ -131,7 +131,10 @@ class Service:
                 history=self.db.rows('SELECT model,role,payload FROM messages WHERE uid=? AND day<=? ORDER BY id DESC LIMIT 16',(uid,day))[::-1]
                 evidence=self.search(self.retrieval_query(text,history),day)
                 lang=self.requested_output_language(text) or u['language']
-                needs_language_help=self.language_help_requested(text)
+                # A generic "что значит" in Eastern Aurelian is not a Silmir request.
+                mentioned_silmir=bool(re.search(r'сильмир|silmir',text,re.I))
+                needs_language_help=(lang in ('silmir','novosilmir')
+                                     or (mentioned_silmir and self.language_help_requested(text)))
                 language_dialect=lang
                 if needs_language_help and lang=='ru':
                     language_dialect=('novosilmir' if re.search(r'новосильмир|novosilmir',text,re.I)
