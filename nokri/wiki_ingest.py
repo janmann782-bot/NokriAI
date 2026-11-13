@@ -97,7 +97,7 @@ def fragments(title, text, length=1050):
             prefix = f'{title}. ' + (f'{section}. ' if section and section != title else '')
             if len(prefix) + len(piece) > length + 150:
                 piece = piece[:length]
-            if chunk and len(chunk) + len(piece) + 2 > length:
+            if chunk and (len(chunk) + len(piece) + 2 > length or event_date(chunk) != event_date(piece)):
                 yield title + '. ' + chunk
                 chunk = ''
             chunk += ('\n' if chunk else '') + piece
