@@ -100,14 +100,33 @@ class Service:
         return None
 
     def search(self,text,day,kind='canon',limit=12):
-        stop={'что','как','кто','где','когда','почему','сколько','какие','назови','расскажи','расскажите','пожалуйста','этот','этом','было','были'}
-        terms=[t for t in dict.fromkeys(re.findall(r'[^\W_]{3,}',text.casefold())) if t not in stop][:16]
+        # Prefer passages matching the whole subject. OR-only searches
+        # drowned named institutions in broad references to their country.
+        stop={'что','как','кто','где','когда','почему','сколько','какие','назови',
+              'расскажи','расскажите','пожалуйста','этот','этом','было','были'}
+        terms=[t for t in dict.fromkeys(re.findall(r'[^\\W_]{3,}',text.casefold()))
+               if t not in stop][:12]
         if not terms: return []
-        query=' OR '.join('"'+t+'"*' for t in terms)
-        return self.db.rows('''SELECT k.* FROM knowledge_fts f JOIN knowledge k ON k.id=f.id
+        # FTS5 searches against individual words, not loose character substrings.
+        strict=' AND '.join('"' + t + '"*' for t in terms)
+        loose=' OR '.join('"' + t + '"*' for t in terms)
+        statement='''SELECT k.* FROM knowledge_fts f JOIN knowledge k ON k.id=f.id
           WHERE knowledge_fts MATCH ? AND k.status='approved' AND k.access='public'
           AND k.event_date<=? AND k.public_from<=? AND k.kind=?
-          ORDER BY CASE WHEN k.id LIKE 'canon-%' THEN 0 ELSE 1 END, bm25(knowledge_fts),k.revision DESC LIMIT ?''',(query,day,day,kind,limit))
+          ORDER BY CASE WHEN k.id LIKE 'canon-%' THEN 0 ELSE 1 END,
+                   bm25(knowledge_fts),k.revision DESC LIMIT ?'''
+        args=lambda query:(query,day,day,kind,limit)
+        matched=self.db.rows(statement,args(strict))
+        if len(matched)>=limit or strict==loose: return matched
+        # The broad fallback supplements the precise hits without overwriting
+        # them or bypassing any status, access or temporal guard.
+        seen={item['id'] for item in matched}
+        for item in self.db.rows(statement,args(loose)):
+            if item['id'] not in seen:
+                matched.append(item)
+                seen.add(item['id'])
+            if len(matched)>=limit: break
+        return matched
 
     async def answer(self,uid,text,update_id,day=None):
         lock=self.locks.setdefault(uid,asyncio.Lock())
@@ -164,7 +183,7 @@ class Service:
                                   else bundled_path('assets/'+filename))
                     grammar=grammar_path.read_text(encoding='utf-8')[:18000]
                 objects=self.db.rows("SELECT name,description FROM objects WHERE status='generated' AND created_day<=? ORDER BY id DESC LIMIT 30",(day,))
-                context={'sources':[{'id':x['id'],'text':x['text']} for x in evidence+dictionary],
+                context={'sources':[{'id':x['id'],'source':x['source'],'text':x['text']} for x in evidence+dictionary],
                          'grammar':grammar,'example_objects':objects}
                 messages=[{'role':'system','content':system_prompt(day,lang,bool(u['filter_on']),model_name=m['name'])},
                           {'role':'system','content':'ДАННЫЕ СПРАВОЧНИКА:\n'+json.dumps(context,ensure_ascii=False)}]

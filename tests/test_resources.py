@@ -51,6 +51,16 @@ class ResourceTests(unittest.TestCase):
             self.assertEqual(len(parts), 8)
             self.assertTrue((root/'assets/canon_2061_additions.jsonl').is_file())
 
+    def test_parliament_patch_is_packaged(self):
+        from nokri.paths import SOURCE_ROOT, PACKAGE_ROOT
+        for root in (SOURCE_ROOT, PACKAGE_ROOT):
+            path=root/'assets/canon_parliament_2061.jsonl'
+            self.assertTrue(path.is_file(),str(path))
+            fact=json.loads(path.read_text(encoding='utf-8').splitlines()[0])
+            self.assertIn('Союзное собрание',fact['text'])
+            self.assertIn('Совет автономий',fact['text'])
+            self.assertEqual(fact['status'],'approved')
+
     def test_resource_paths_cannot_escape(self):
         for path in ('../private', '/etc/passwd'):
             with self.assertRaises(ValueError):

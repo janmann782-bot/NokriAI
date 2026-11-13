@@ -66,6 +66,16 @@ def initialize(db):
         else:
             load_curated(db,additions)
             db.set('canon_2061_v2_loaded',True)
+    # Parliament fact is a versioned public correction, so existing bot
+    # installations receive it without reloading the entire old archive.
+    if not db.setting('canon_parliament_2061_v1_loaded',False):
+        try:
+            parliament=bundled_path('assets/canon_parliament_2061.jsonl')
+        except FileNotFoundError:
+            logging.error('Verified parliament canon missing; will retry on next startup')
+        else:
+            load_curated(db,parliament)
+            db.set('canon_parliament_2061_v1_loaded',True)
 
 def _knowledge_seed_available():
     try:

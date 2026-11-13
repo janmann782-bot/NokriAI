@@ -184,6 +184,38 @@ class Core(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(any(x['event_date'] <= '2061-11-14' for x in records))
         self.assertTrue(any(x['event_date'] > '2061-11-14' for x in records))
 
+    def test_parliament_exact_subject_is_found_first(self):
+        from nokri.knowledge import put,load_curated
+        from nokri.paths import bundled_path
+        for i in range(20):
+            put(self.db,id='noise-'+str(i),source='old wiki',text='Кефирстана. Справочная статья '+str(i),
+                event_date='0001-01-01',public_from='0001-01-01',
+                access='public',status='approved',kind='canon')
+        load_curated(self.db,bundled_path('assets/canon_parliament_2061.jsonl'))
+        hits=self.s.search('Парламент Кефирстана','2061-11-14')
+        self.assertTrue(hits)
+        self.assertEqual(hits[0]['id'],'canon-parliament-kefirstan-2061-v1')
+        self.assertIn('240 депутатов',hits[0]['text'])
+        self.assertIn('32 делегата',hits[0]['text'])
+
+    async def test_parliament_answer_receives_both_chambers_in_context(self):
+        from nokri.knowledge import load_curated
+        from nokri.paths import bundled_path
+        load_curated(self.db,bundled_path('assets/canon_parliament_2061.jsonl'))
+        await self.s.answer(1,'Парламент Кефирстана','parliament-2061',day='2061-11-14')
+        payload=self.fake.calls[-1][1]
+        context=json.loads(payload[1]['content'].split('\\n',1)[1])
+        self.assertTrue(any('Союзное собрание' in item['text'] and
+                            'Совет автономий' in item['text'] for item in context['sources']))
+        self.assertTrue(any('Аурелия Вики' in item['source'] for item in context['sources']))
+
+    def test_parliament_fact_is_hidden_before_public_from(self):
+        from nokri.knowledge import load_curated
+        from nokri.paths import bundled_path
+        load_curated(self.db,bundled_path('assets/canon_parliament_2061.jsonl'))
+        self.assertFalse(self.s.search('Парламент Кефирстана','2059-12-31'))
+        self.assertTrue(self.s.search('Парламент Кефирстана','2061-11-14'))
+
     def test_shared_budget_persist_and_roll(self):
         self.db.execute('INSERT INTO budgets VALUES(?,?,?)',(1,300000,500000))
         self.s.reserve(1,'flash','a')
