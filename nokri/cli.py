@@ -7,6 +7,7 @@ import sqlite3
 from pathlib import Path
 from .db import DB
 from .provider import Vault,Provider
+from .master_key import master_key_path, resolve_master_key
 from .service import Service
 from .knowledge import load_curated,import_tree
 from .budget import Budgets, usd_to_nusd
@@ -56,12 +57,14 @@ def main():
                           'owner_id':int(os.environ['OWNER_ID']),
                           'default_budget':db.setting('default_budget'),
                           'telegram_configured':bool(os.getenv('TELEGRAM_BOT_TOKEN')),
-                          'master_configured':bool(os.getenv('MASTER_KEY'))},ensure_ascii=False,indent=2)); return
-    for env in ('TELEGRAM_BOT_TOKEN','OWNER_ID','MASTER_KEY'):
+                          'master_configured':bool(os.getenv('MASTER_KEY') or master_key_path(db.path).is_file()),
+                          'master_mode':('environment' if os.getenv('MASTER_KEY') else
+                                         'local_file' if master_key_path(db.path).is_file() else 'auto_on_run')},ensure_ascii=False,indent=2)); return
+    for env in ('TELEGRAM_BOT_TOKEN','OWNER_ID'):
         if not os.getenv(env): parser.error('Задайте '+env+' в окружении. См. README.md')
     owner=int(os.environ['OWNER_ID'])
     if owner<=0: parser.error('OWNER_ID должен быть положительным числовым ID владельца')
-    vault=Vault(db,os.environ['MASTER_KEY'])
+    vault=Vault(db,resolve_master_key(db,os.getenv('MASTER_KEY')))
     # Explicit env key is an optional bootstrap; later Telegram rotations take priority.
     if os.getenv('ANYMODEL_API_KEY') and not db.rows('SELECT 1 FROM secrets WHERE provider=?',('anymodel',)):
         vault.put('anymodel',os.environ['ANYMODEL_API_KEY'])
