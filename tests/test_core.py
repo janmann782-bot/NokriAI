@@ -75,6 +75,37 @@ class Core(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result,UNKNOWN_CELESTIAL)
         self.assertEqual(len(leak.calls),1)
 
+    def test_verified_autonomies_fact_is_retrievable(self):
+        from nokri.paths import bundled_path
+        from nokri.knowledge import load_curated
+        load_curated(self.db,bundled_path('assets/canon_2061.jsonl'))
+        records=self.s.search('Сколько автономий Кефирстан', '2061-11-14')
+        self.assertTrue(any('3 автономии' in r['text'] and 'Молозорь' in r['text'] for r in records))
+
+    async def test_short_followup_uses_country_without_dictionary(self):
+        from nokri.paths import bundled_path
+        from nokri.knowledge import load_curated
+        load_curated(self.db,bundled_path('assets/canon_2061.jsonl'))
+        self.db.execute(
+            'INSERT INTO messages(uid,model,role,payload,at,day) VALUES(?,?,?,?,?,?)',
+            (1,'flash','user',json.dumps({'role':'user','content':'Кефирстан'}),self.now,'2061-11-14'))
+        self.db.execute(
+            'INSERT INTO messages(uid,model,role,payload,at,day) VALUES(?,?,?,?,?,?)',
+            (1,'flash','assistant',json.dumps({'role':'assistant','content':'Кефирстан - государство Эниварры.'}),self.now,'2061-11-14'))
+        await self.s.answer(1,'Сколько автономий','autonomies-followup',day='2061-11-14')
+        payload=self.fake.calls[-1][1]
+        context=json.loads(payload[1]['content'].split('\\n',1)[1])
+        self.assertTrue(any('3 автономии' in s['text'] for s in context['sources']))
+        self.assertEqual(context['grammar'],'')
+        self.assertFalse(any('litmø' in s['text'] for s in context['sources']))
+
+    def test_translation_resources_are_opt_in(self):
+        self.assertFalse(self.s.language_help_requested('Сколько автономий'))
+        self.assertFalse(self.s.language_help_requested('Кефирстан'))
+        self.assertTrue(self.s.language_help_requested('Переведи слово на сильмир'))
+        self.assertEqual(self.s.requested_output_language('Ответь на новосильмире'),'novosilmir')
+        self.assertIsNone(self.s.requested_output_language('Что такое сильмир?'))
+
     def test_shared_budget_persist_and_roll(self):
         self.db.execute('INSERT INTO budgets VALUES(?,?,?)',(1,300000,500000))
         self.s.reserve(1,'flash','a')

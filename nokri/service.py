@@ -5,14 +5,15 @@ import time
 from pathlib import Path
 from .policy import aurelia_day, system_prompt, preliminary_filter, unknown_earth_reference, forbidden_frame, UNKNOWN_CELESTIAL, REFUSAL, SECRET
 from .provider import ProviderError
+from .paths import bundled_path
 from .budget import Budgets, BudgetError, quote, format_usd
 
 class Denied(Exception):
     pass
 
 class Service:
-    def __init__(self,db,provider,owner_id,data_dir='data',clock=time.time):
-        self.db,self.provider,self.owner_id,self.data_dir,self.clock=db,provider,owner_id,Path(data_dir),clock
+    def __init__(self,db,provider,owner_id,data_dir=None,clock=time.time):
+        self.db,self.provider,self.owner_id,self.data_dir,self.clock=db,provider,owner_id,Path(data_dir) if data_dir is not None else None,clock
         self.budgets=Budgets(db,clock)
         self.locks={}
         self.semaphore=asyncio.Semaphore(12)
@@ -61,6 +62,43 @@ class Service:
                 (str(update_id),uid,now,'held',estimate,a,b))
         return estimate
 
+    @staticmethod
+    def retrieval_query(text,history):
+        """Resolve short follow-up questions against earlier user turns."""
+        if len(text.split())>7 or not re.match(
+            r'(?i)^\\s*(?:а\\s+)?(?:сколько|какие|назови|перечисли|кто|где|когда|почему|что|чем|как|их|они|там)\\b',
+            text):
+            return text
+        recent=[]
+        for item in reversed(history):
+            if item['role']!='user':
+                continue
+            try:
+                previous=json.loads(item['payload']).get('content','')
+            except (ValueError,TypeError,AttributeError):
+                continue
+            if isinstance(previous,str) and previous.strip() and previous.strip()!=text.strip():
+                recent.append(previous[:180])
+            if len(recent)==2:
+                break
+        return ' '.join([text,*recent]) if recent else text
+
+    @staticmethod
+    def language_help_requested(text):
+        """Do not fetch translation dictionaries for ordinary factual questions."""
+        return bool(re.search(
+            r'(?i)\\b(?:перевед[иёт]+|перевод|как\\s+будет|как\\s+сказать|что\\s+значит|что\\s+означает|на\\s+сильмир|по-?сильмир|на\\s+новосильмир)\\b',
+            text))
+
+    @staticmethod
+    def requested_output_language(text):
+        target=re.search(
+            r'(?i)(?:ответь|напиши|переведи|скажи|как\\s+будет|как\\s+сказать).{0,65}(?:на\\s+|по-?)(новосильмир|сильмир)',
+            text)
+        if target:
+            return 'novosilmir' if 'ново' in target.group(1).lower() else 'silmir'
+        return None
+
     def search(self,text,day,kind='canon',limit=8):
         terms=list(dict.fromkeys(re.findall(r'[^\W_]{3,}',text.casefold())))[:24]
         if not terms: return []
@@ -88,19 +126,27 @@ class Service:
                     self.budgets.settle(update_id,zero=True)
                     self.db.execute("UPDATE requests SET status='filtered',input_tokens=0,output_tokens=0,cost=0 WHERE update_id=?",(str(update_id),))
                     return early
-                evidence=self.search(text,day)
-                lang=u['language']
-                if re.search(r'новосильмир|novosilmir',text,re.I): lang='novosilmir'
-                elif re.search(r'сильмир|sil.mir',text,re.I): lang='silmir'
-                dictionary=self.search(text,day,'novosilmir' if lang=='novosilmir' else 'silmir',20)
+                # Retrieve history first so a follow-up like "Сколько автономий"
+                # retains "Кефирстан" from the preceding user turn.
+                history=self.db.rows('SELECT model,role,payload FROM messages WHERE uid=? AND day<=? ORDER BY id DESC LIMIT 16',(uid,day))[::-1]
+                evidence=self.search(self.retrieval_query(text,history),day)
+                lang=self.requested_output_language(text) or u['language']
+                needs_language_help=self.language_help_requested(text)
+                language_dialect=lang
+                if needs_language_help and lang=='ru':
+                    language_dialect=('novosilmir' if re.search(r'новосильмир|novosilmir',text,re.I)
+                                      else 'silmir')
+                dictionary=(self.search(text,day,language_dialect,20)
+                            if lang in ('silmir','novosilmir') or needs_language_help else [])
                 grammar=''
-                if lang in ('silmir','novosilmir') or re.search(r'сильмир|sil.mir',text,re.I):
-                    filename='novosilmir_grammar.txt' if lang=='novosilmir' else 'silmir_grammar.txt'
-                    grammar=(self.data_dir/filename).read_text()[:18000]
+                if lang in ('silmir','novosilmir') or needs_language_help:
+                    filename='novosilmir_grammar.txt' if language_dialect=='novosilmir' else 'silmir_grammar.txt'
+                    grammar_path=(self.data_dir/filename if self.data_dir is not None
+                                  else bundled_path('assets/'+filename))
+                    grammar=grammar_path.read_text(encoding='utf-8')[:18000]
                 objects=self.db.rows("SELECT name,description FROM objects WHERE status='generated' AND created_day<=? ORDER BY id DESC LIMIT 30",(day,))
                 context={'sources':[{'id':x['id'],'text':x['text']} for x in evidence+dictionary],
                          'grammar':grammar,'example_objects':objects}
-                history=self.db.rows('SELECT model,role,payload FROM messages WHERE uid=? AND day<=? ORDER BY id DESC LIMIT 16',(uid,day))[::-1]
                 messages=[{'role':'system','content':system_prompt(day,lang,bool(u['filter_on']))},
                           {'role':'system','content':'ДАННЫЕ СПРАВОЧНИКА:\n'+json.dumps(context,ensure_ascii=False)}]
                 # Full reasoning remains private and is replayed only to the same provider/model.

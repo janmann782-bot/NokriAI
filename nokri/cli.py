@@ -36,6 +36,16 @@ def initialize(db):
         else:
             load_curated(db,seed)
             db.set('seed_loaded',True)
+    # Independently versioned canon patches must reach already-initialized databases.
+    # Never overwrite user edits in subsequent restarts of the same factset version.
+    if not db.setting('canon_2061_v1_loaded',False):
+        try:
+            factset=bundled_path('assets/canon_2061.jsonl')
+        except FileNotFoundError:
+            logging.error('Verified canon patch missing (assets/canon_2061.jsonl); retry next startup')
+        else:
+            load_curated(db,factset)
+            db.set('canon_2061_v1_loaded',True)
 
 def _knowledge_seed_available():
     try:

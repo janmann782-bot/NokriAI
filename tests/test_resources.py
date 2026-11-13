@@ -35,6 +35,15 @@ class ResourceTests(unittest.TestCase):
                                  'assets/curated.jsonl.gz'):
                     self.assertTrue(bundled_path(resource).is_file())
 
+    def test_verified_canon_exists_in_both_install_layouts(self):
+        from nokri.paths import SOURCE_ROOT,PACKAGE_ROOT
+        for root in (SOURCE_ROOT,PACKAGE_ROOT):
+            p=root/'assets/canon_2061.jsonl'
+            self.assertTrue(p.is_file(),str(p))
+            item=json.loads(p.read_text(encoding='utf-8').splitlines()[0])
+            self.assertIn('3 автономии',item['text'])
+            self.assertEqual(item['access'],'public')
+
     def test_resource_paths_cannot_escape(self):
         for path in ('../private', '/etc/passwd'):
             with self.assertRaises(ValueError):
