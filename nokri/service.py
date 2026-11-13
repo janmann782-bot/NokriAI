@@ -66,7 +66,7 @@ class Service:
     def retrieval_query(text,history):
         """Resolve short follow-up questions against earlier user turns."""
         if len(text.split())>7 or not re.match(
-            r'(?i)^\\s*(?:а\\s+)?(?:сколько|какие|назови|перечисли|кто|где|когда|почему|что|чем|как|их|они|там)\\b',
+            r'(?i)^\s*(?:а\s+)?(?:сколько|какие|назови|перечисли|кто|где|когда|почему|что|чем|как|их|они|там)\b',
             text):
             return text
         recent=[]
@@ -87,13 +87,13 @@ class Service:
     def language_help_requested(text):
         """Do not fetch translation dictionaries for ordinary factual questions."""
         return bool(re.search(
-            r'(?i)\\b(?:перевед[иёт]+|перевод|как\\s+будет|как\\s+сказать|что\\s+значит|что\\s+означает|на\\s+сильмир|по-?сильмир|на\\s+новосильмир)\\b',
+            r'(?i)\b(?:перевед[иёт]+|перевод|как\s+будет|как\s+сказать|что\s+значит|что\s+означает|на\s+сильмир\w*|по-?сильмир\w*|на\s+новосильмир\w*)\b',
             text))
 
     @staticmethod
     def requested_output_language(text):
         target=re.search(
-            r'(?i)(?:ответь|напиши|переведи|скажи|как\\s+будет|как\\s+сказать).{0,65}(?:на\\s+|по-?)(новосильмир|сильмир)',
+            r'(?i)(?:ответь|напиши|переведи|скажи|как\s+будет|как\s+сказать).{0,65}(?:на\s+|по-?)(новосильмир|сильмир)',
             text)
         if target:
             return 'novosilmir' if 'ново' in target.group(1).lower() else 'silmir'

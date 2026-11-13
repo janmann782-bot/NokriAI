@@ -94,7 +94,7 @@ class Core(unittest.IsolatedAsyncioTestCase):
             (1,'flash','assistant',json.dumps({'role':'assistant','content':'Кефирстан - государство Эниварры.'}),self.now,'2061-11-14'))
         await self.s.answer(1,'Сколько автономий','autonomies-followup',day='2061-11-14')
         payload=self.fake.calls[-1][1]
-        context=json.loads(payload[1]['content'].split('\\n',1)[1])
+        context=json.loads(payload[1]['content'].split('\n',1)[1])
         self.assertTrue(any('3 автономии' in s['text'] for s in context['sources']))
         self.assertEqual(context['grammar'],'')
         self.assertFalse(any('litmø' in s['text'] for s in context['sources']))
