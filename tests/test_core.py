@@ -99,6 +99,13 @@ class Core(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(context['grammar'],'')
         self.assertFalse(any('litmø' in s['text'] for s in context['sources']))
 
+    async def test_generic_word_question_does_not_load_silmir(self):
+        await self.s.answer(1,'Что значит автономия?','generic-word',day='2061-11-14')
+        payload=self.fake.calls[-1][1]
+        context=json.loads(payload[1]['content'].split('\n',1)[1])
+        self.assertEqual(context['grammar'],'')
+        self.assertEqual(context['sources'],[])
+
     def test_translation_resources_are_opt_in(self):
         self.assertFalse(self.s.language_help_requested('Сколько автономий'))
         self.assertFalse(self.s.language_help_requested('Кефирстан'))

@@ -68,6 +68,9 @@ class MissingSeedTests(unittest.TestCase):
                 initialize(db)
             self.assertFalse(db.setting('seed_loaded', False))
             self.assertEqual(len(db.rows('SELECT id FROM models')), 4)
+            self.assertEqual(db.setting('canon_2061_v1_loaded'),True)
+            self.assertTrue(any('3 автономии' in row['text'] for row in
+                                db.rows("SELECT text FROM knowledge WHERE id='canon-kefirstan-autonomies-2061-v1'")))
 
 
 if __name__ == '__main__':
