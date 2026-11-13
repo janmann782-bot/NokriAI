@@ -41,10 +41,6 @@ class ResourceTests(unittest.TestCase):
                 bundled_path(path)
 
 
-if __name__ == '__main__':
-    unittest.main()
-
-
 class MissingSeedTests(unittest.TestCase):
     def test_missing_archive_does_not_block_initialization(self):
         from nokri.cli import initialize
@@ -63,3 +59,7 @@ class MissingSeedTests(unittest.TestCase):
                 initialize(db)
             self.assertFalse(db.setting('seed_loaded', False))
             self.assertEqual(len(db.rows('SELECT id FROM models')), 4)
+
+
+if __name__ == '__main__':
+    unittest.main()

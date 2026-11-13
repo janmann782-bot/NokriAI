@@ -3,3 +3,6 @@
 state/
 __pycache__/
 *.pyc
+
+# Bothost uses /app/data as its persistent runtime volume
+data/
