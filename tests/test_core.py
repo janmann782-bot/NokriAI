@@ -172,6 +172,18 @@ class Core(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn('восточно-аурельском (русском)',prompt)
         self.assertIn('Nokri 4 Etajd',prompt)
 
+    def test_wiki_export_can_be_loaded_and_dates_respected(self):
+        from io import StringIO
+        from nokri.wiki_ingest import wiki_entries
+        raw = ('<mediawiki><page><title>Твороград</title><ns>0</ns><revision><text>'
+               'Твороград - промышленная автономия Кефирстана в 2061 году. В регионе есть предприятия.'
+               '\n\nСобытие 2063 года еще не произошло в 2061 году и не должно быть известно заранее.'
+               '</text></revision></page></mediawiki>')
+        records = list(wiki_entries(StringIO(raw)))
+        self.assertGreaterEqual(len(records), 2)
+        self.assertTrue(any(x['event_date'] <= '2061-11-14' for x in records))
+        self.assertTrue(any(x['event_date'] > '2061-11-14' for x in records))
+
     def test_shared_budget_persist_and_roll(self):
         self.db.execute('INSERT INTO budgets VALUES(?,?,?)',(1,300000,500000))
         self.s.reserve(1,'flash','a')

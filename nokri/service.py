@@ -99,13 +99,15 @@ class Service:
             return 'novosilmir' if 'ново' in target.group(1).lower() else 'silmir'
         return None
 
-    def search(self,text,day,kind='canon',limit=8):
-        terms=list(dict.fromkeys(re.findall(r'[^\W_]{3,}',text.casefold())))[:24]
+    def search(self,text,day,kind='canon',limit=12):
+        stop={'что','как','кто','где','когда','почему','сколько','какие','назови','расскажи','расскажите','пожалуйста','этот','этом','было','были'}
+        terms=[t for t in dict.fromkeys(re.findall(r'[^\W_]{3,}',text.casefold())) if t not in stop][:16]
         if not terms: return []
         query=' OR '.join('"'+t+'"*' for t in terms)
         return self.db.rows('''SELECT k.* FROM knowledge_fts f JOIN knowledge k ON k.id=f.id
           WHERE knowledge_fts MATCH ? AND k.status='approved' AND k.access='public'
-          AND k.event_date<=? AND k.public_from<=? AND k.kind=? ORDER BY bm25(knowledge_fts),k.revision DESC LIMIT ?''',(query,day,day,kind,limit))
+          AND k.event_date<=? AND k.public_from<=? AND k.kind=?
+          ORDER BY CASE WHEN k.id LIKE 'canon-%' THEN 0 ELSE 1 END, bm25(knowledge_fts),k.revision DESC LIMIT ?''',(query,day,day,kind,limit))
 
     async def answer(self,uid,text,update_id,day=None):
         lock=self.locks.setdefault(uid,asyncio.Lock())
@@ -191,6 +193,7 @@ class Service:
                 if result['decision']=='secret': answer=SECRET
                 elif result['decision']=='politics' and u['filter_on']: answer=REFUSAL
                 elif forbidden_frame(answer): answer=UNKNOWN_CELESTIAL
+                elif unknown_language_reference(answer): answer=UNKNOWN_LANGUAGE
                 elif backend_disclosure(answer): answer='Я '+m['name']+', государственный ИИ САР Кефирстан.'
                 if result['decision']=='allow' and re.search(r'придум|создай.{0,20}(магазин|сервис|фирм)',text,re.I):
                     candidates=result.get('objects',[])

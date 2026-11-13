@@ -11,6 +11,7 @@ from .master_key import master_key_path, resolve_master_key
 from .paths import bundled_path
 from .service import Service
 from .knowledge import load_curated,import_tree
+from .wiki_ingest import load_wiki
 from .budget import Budgets, usd_to_nusd
 import time
 
@@ -46,6 +47,25 @@ def initialize(db):
         else:
             load_curated(db,factset)
             db.set('canon_2061_v1_loaded',True)
+    # The public MediaWiki export is distinct from unreviewed archive drafts.
+    # The versioned flag allows installing it in already initialized databases.
+    if not db.setting('wiki_20261112_loaded',False):
+        try:
+            parts=[bundled_path(f'assets/wiki_20261112.part{i:02}.xml') for i in range(8)]
+            count=load_wiki(db,parts)
+        except FileNotFoundError:
+            logging.error('Public Aurelia Wiki assets missing; retrying next startup')
+        else:
+            db.set('wiki_20261112_loaded',True)
+            db.set('wiki_20261112_chunks',count)
+    if not db.setting('canon_2061_v2_loaded',False):
+        try:
+            additions=bundled_path('assets/canon_2061_additions.jsonl')
+        except FileNotFoundError:
+            logging.error('Public author canon patch v2 missing; retrying next startup')
+        else:
+            load_curated(db,additions)
+            db.set('canon_2061_v2_loaded',True)
 
 def _knowledge_seed_available():
     try:

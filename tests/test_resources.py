@@ -44,6 +44,13 @@ class ResourceTests(unittest.TestCase):
             self.assertIn('3 автономии',item['text'])
             self.assertEqual(item['access'],'public')
 
+    def test_public_wiki_export_and_author_patch_are_packaged(self):
+        from nokri.paths import SOURCE_ROOT, PACKAGE_ROOT
+        for root in (SOURCE_ROOT, PACKAGE_ROOT):
+            parts=list((root/'assets').glob('wiki_20261112.part*.xml'))
+            self.assertEqual(len(parts), 8)
+            self.assertTrue((root/'assets/canon_2061_additions.jsonl').is_file())
+
     def test_resource_paths_cannot_escape(self):
         for path in ('../private', '/etc/passwd'):
             with self.assertRaises(ValueError):

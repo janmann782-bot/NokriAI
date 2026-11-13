@@ -12,4 +12,4 @@ nokri = "nokri.cli:main"
 include = ["nokri*"]
 
 [tool.setuptools.package-data]
-nokri = ["resources/config/*.json", "resources/assets/*.gz", "resources/assets/*.json", "resources/assets/*.jsonl", "resources/assets/*.txt"]
+nokri = ["resources/config/*.json", "resources/assets/*.gz", "resources/assets/*.json", "resources/assets/*.jsonl", "resources/assets/*.txt", "resources/assets/*.xml"]
