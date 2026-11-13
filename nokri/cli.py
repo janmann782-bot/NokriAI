@@ -8,6 +8,7 @@ from pathlib import Path
 from .db import DB
 from .provider import Vault,Provider
 from .master_key import master_key_path, resolve_master_key
+from .paths import bundled_path
 from .service import Service
 from .knowledge import load_curated,import_tree
 from .budget import Budgets, usd_to_nusd
@@ -16,15 +17,15 @@ import time
 def initialize(db):
     Budgets(db,time.time).migrate_legacy()
     if db.setting('default_budget') is None:
-        budget=json.loads(Path('config/budgets.json').read_text())
+        budget=json.loads(bundled_path('config/budgets.json').read_text(encoding='utf-8'))
         db.set('default_budget',{'h3_nusd':usd_to_nusd(budget['default_h3']),'day_nusd':usd_to_nusd(budget['default_day'])})
-    for k,v in json.loads(Path('config/models.json').read_text()).items():
+    for k,v in json.loads(bundled_path('config/models.json').read_text(encoding='utf-8')).items():
         if not db.rows('SELECT 1 FROM models WHERE id=?',(k,)): db.put_model(k,v)
         old=db.model(k)
         if 'h3' in old or 'day' in old:
             old.pop('h3',None);old.pop('day',None);db.put_model(k,old)
     if not db.setting('seed_loaded',False):
-        load_curated(db,'data/curated.jsonl.gz'); db.set('seed_loaded',True)
+        load_curated(db,bundled_path('data/curated.jsonl.gz')); db.set('seed_loaded',True)
 
 def main():
     os.umask(0o077)
@@ -36,7 +37,7 @@ def main():
     db=DB(os.getenv('DATABASE_PATH','state/nokri.sqlite'))
     initialize(db)
     if not os.getenv('OWNER_ID'):
-        os.environ['OWNER_ID']=str(json.loads(Path('config/deployment.json').read_text())['owner_id'])
+        os.environ['OWNER_ID']=str(json.loads(bundled_path('config/deployment.json').read_text(encoding='utf-8'))['owner_id'])
     if args.command=='init': print('База создана. Заполните окружение, затем nokri run'); return
     if args.command=='import':
         if not args.path: parser.error('Укажите каталог распакованного архива')
