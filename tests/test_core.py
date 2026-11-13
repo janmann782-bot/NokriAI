@@ -11,7 +11,7 @@ from cryptography.fernet import Fernet
 from nokri.db import DB
 from nokri.service import Service,Denied
 from nokri.provider import Provider,Vault,ProviderError,validate_model
-from nokri.policy import aurelia_day,preliminary_filter,unknown_earth_reference,forbidden_frame,system_prompt,is_nokri_identity_question,backend_disclosure,UNKNOWN_CELESTIAL,REFUSAL,SECRET
+from nokri.policy import aurelia_day,preliminary_filter,unknown_earth_reference,unknown_language_reference,forbidden_frame,system_prompt,is_nokri_identity_question,backend_disclosure,UNKNOWN_CELESTIAL,UNKNOWN_LANGUAGE,REFUSAL,SECRET
 from nokri.knowledge import put,import_tree
 from nokri.telegram import Telegram
 from nokri.budget import usd_to_nusd, quote, actual_cost, Budgets, BudgetError, format_usd
@@ -151,6 +151,26 @@ class Core(unittest.IsolatedAsyncioTestCase):
         response=await self.s.answer(1,'Придумай магазин','null-objects',day='2061-11-14')
         self.assertEqual(response,'Пример магазина')
         self.assertEqual(self.db.rows('SELECT count(*) n FROM objects')[0]['n'],0)
+
+    async def test_unknown_outside_languages_do_not_trigger_provider(self):
+        for i, question in enumerate((
+            'Напиши на украинском слово Кефирстан',
+            'Что такое русский, откуда пошло слово русский?',
+            'Можешь написать на английском?',
+            'Расскажи про Russian язык',
+        )):
+            self.assertTrue(unknown_language_reference(question))
+            answer=await self.s.answer(1,question,'outside-language-'+str(i),day='2061-11-14')
+            self.assertEqual(answer,UNKNOWN_LANGUAGE)
+        self.assertEqual(self.fake.calls,[])
+        self.assertFalse(unknown_language_reference('Что такое восточно-аурельский язык?'))
+        self.assertFalse(unknown_language_reference('Переведи на сильмир'))
+
+    def test_prompt_does_not_alias_external_languages(self):
+        prompt=system_prompt('2061-11-14','ru',False,model_name='Nokri 4 Etajd')
+        self.assertNotIn('русский язык называется',prompt)
+        self.assertNotIn('восточно-аурельском (русском)',prompt)
+        self.assertIn('Nokri 4 Etajd',prompt)
 
     def test_shared_budget_persist_and_roll(self):
         self.db.execute('INSERT INTO budgets VALUES(?,?,?)',(1,300000,500000))

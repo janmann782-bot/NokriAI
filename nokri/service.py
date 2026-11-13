@@ -3,7 +3,7 @@ import json
 import re
 import time
 from pathlib import Path
-from .policy import aurelia_day, system_prompt, preliminary_filter, unknown_earth_reference, forbidden_frame, is_nokri_identity_question, backend_disclosure, UNKNOWN_CELESTIAL, REFUSAL, SECRET
+from .policy import aurelia_day, system_prompt, preliminary_filter, unknown_earth_reference, unknown_language_reference, forbidden_frame, is_nokri_identity_question, backend_disclosure, UNKNOWN_CELESTIAL, UNKNOWN_LANGUAGE, REFUSAL, SECRET
 from .provider import ProviderError
 from .paths import bundled_path
 from .budget import Budgets, BudgetError, quote, format_usd
@@ -133,6 +133,8 @@ class Service:
                 early=preliminary_filter(text,bool(u['filter_on']))
                 if not early and unknown_earth_reference(text):
                     early=UNKNOWN_CELESTIAL
+                if not early and unknown_language_reference(text):
+                    early=UNKNOWN_LANGUAGE
                 if early:
                     self.reserve(uid,key,update_id,expected_model=m,free=True)
                     self.budgets.settle(update_id,zero=True)
